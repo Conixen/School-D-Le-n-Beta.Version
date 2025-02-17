@@ -1,4 +1,5 @@
 ﻿using Microsoft.Data.SqlClient;
+using School_Dé_León_Beta.Version.Models;
 using System;
 using System.Data;
 using static System.Net.Mime.MediaTypeNames;
@@ -8,48 +9,65 @@ namespace School_Dé_León_Beta.Version
     public class SchoolMethods
     {
         //Scaffold-DbContext “Data Source = localhost; Database=SchoolDèLéonApplikationen;Integrated Security = True; Trust Server Certificate=true;” Microsoft.EntityFrameworkCore.SqlServer -OutputDir Models
-         string connectionString = @"Data Source = localhost;Initial Catalog = SchoolDeLeonAppAlpha;Integrated Security=True; Trust Server Certificate=True";
+        string connectionString = @"Data Source = localhost;Initial Catalog = SchoolDèLéonApplikationen;Integrated Security=True; Trust Server Certificate=True";
 
-        //public void ShowAllStudents()
-        //{
-        //    using (var context = new SchoolDèLéonApplikationen1Context())
-        //    {
-        //        var students = context.Students.ToList();
-        //        Console.WriteLine("\n--- Lista över alla elever ---\n");
+        public void ShowAllStudents()
+        {
+            using (var context = new SchoolDèLéonApplikationenContext())
+            {
+                var students = (from s in context.Students
+                                join c in context.Classes on s.ClassId equals c.ClassId
+                                select new
+                                {
+                                    s.StudentId,
+                                    s.FirstName,
+                                    s.LastName,
+                                    ClassName = c.ClassName
+                                }).ToList();
+                Console.WriteLine("\n--- Lista över alla elever ---\n");
 
-        //        foreach (var student in students)
-        //        {
-        //            Console.WriteLine($"ID: {student.Id} | Namn: {student.FirstName} {student.LastName} | Klass: {student.ClassName}");
-        //        }
-        //    }
-        //}
-
+                foreach (var student in students)
+                {
+                    Console.WriteLine($"ID: {student.StudentId} | Namn: {student.FirstName} {student.LastName} | Klass: {student.ClassName}");
+                }
+            }
+            Console.ReadKey();
+        }
 
         public void GetStudentInfo(int studentId)
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            try
             {
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand("GetStudentInfo", conn))
+                using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@StudentId", studentId);
-
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    conn.Open();
+                    using (SqlCommand cmd = new SqlCommand("GetStudentInfo", conn))
                     {
-                        if (reader.Read())
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        cmd.Parameters.AddWithValue("@StudentId", studentId);
+
+                        using (SqlDataReader reader = cmd.ExecuteReader())
                         {
-                            Console.WriteLine($"ID: {reader["Id"]} | Namn: {reader["FirstName"]} {reader["LastName"]} | Klass: {reader["ClassName"]}");
-                        }
-                        else
-                        {
-                            Console.WriteLine("Ingen elev hittades.");
+                            if (reader.Read())
+                            {
+                                Console.WriteLine("\n--- Elevinformation ---\n");
+                                Console.WriteLine($"ID: {reader["StudentID"]} | Namn: {reader["FirstName"]} {reader["LastName"]} | PersonNummer: {reader["SSNUM"]} | Klass: {reader["ClassName"]}");
+                                Console.ReadKey();
+                            }
+                            else
+                            {
+                                Console.WriteLine("Ingen elev hittades med det angivna ID:t.");
+                                Console.ReadKey();
+                            }
                         }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ett fel uppstod: {ex.Message}");
+            }
         }
-
         public void AddNewEmploye()
         {
             Console.Write("Ange namn: ");
@@ -62,7 +80,7 @@ namespace School_Dé_León_Beta.Version
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
-                string query = "INSERT INTO Employees (Name, Position, StartDate) VALUES (@name, @position, @startDate)";
+                string query = "INSERT INTO Employe (Name, Position, StartDate) VALUES (@name, @position, @startDate)";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -80,7 +98,7 @@ namespace School_Dé_León_Beta.Version
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
-                string query = "SELECT Name, Position, DATEDIFF(YEAR, StartDate, GETDATE()) AS YearsWorked FROM Employees";
+                string query = "SELECT EmployeFName, EmployeLName, RollId, DepartmentID, HireDate FROM Employe";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
@@ -88,17 +106,20 @@ namespace School_Dé_León_Beta.Version
                     Console.WriteLine("\n--- Personal Översikt ---\n");
                     while (reader.Read())
                     {
-                        Console.WriteLine($"Namn: {reader["Name"]} | Befattning: {reader["Position"]} | År på skolan: {reader["YearsWorked"]}");
+                        Console.WriteLine($"Namn: {reader["EmployeFName"]} {reader["EmployeLName"]}  " +
+                            $"| Befattning: {reader["RollId"]} {reader["DepartmentID"]} " +
+                            $"| År på skolan: {reader["HireDate"]}");
                     }
+                    Console.ReadKey();
                 }
             }
         }
 
         //public void ShowAllCourses()
         //{
-        //    using (var context = new SchoolDèLéonApplikationen1Context())
+        //    using (var context = new SchoolDèLéonApplikationenContext())
         //    {
-        //        var courses = context.Courses.ToList();
+        //        var courses = context.Subject.ToList();
         //        Console.WriteLine("\n--- Lista över alla kurser ---\n");
 
         //        foreach (var course in courses)
@@ -164,7 +185,7 @@ namespace School_Dé_León_Beta.Version
         }
         //public void ShowTeachersPerDepartment()
         //{
-        //    using (var context = new SchoolContext())
+        //    using (var context = new SchoolDèLéonApplikationenContext())
         //    {
         //        var departments = context.Teachers
         //            .GroupBy(t => t.Department)
@@ -201,7 +222,7 @@ namespace School_Dé_León_Beta.Version
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
-                string query = "SELECT Department, AVG(Salary) AS AvgSalary FROM Employees GROUP BY Department";
+                string query = "SELECT Department, AVG(Salary) AS AvgSalary FROM Employe GROUP BY Department";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())

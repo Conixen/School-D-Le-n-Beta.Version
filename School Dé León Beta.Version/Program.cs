@@ -7,9 +7,6 @@ namespace School_Dé_León_Beta.Version
     {
         static void Main(string[] args)
         {
-            // Data Source=localhost;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False
-            // Data Source=localhost;Initial Catalog=SchoolDèLéonApplikationen;Integrated Security=True;Connect Timeout=30;Encrypt=True;Trust Server Certificate=True;Application Intent=ReadWrite;Multi Subnet Failover=False
-            //var connectionString = @"Data Source = localhost;Initial Catalog = SchoolDèLéonApplikationen;Integrated Security=True; Trust Server Certificate=True";
             Console.WriteLine("Välkommen till School Dè Léon Applikationen!" +
                 "\nBeta Version 2.3");
             Thread.Sleep(5000);
@@ -38,11 +35,21 @@ namespace School_Dé_León_Beta.Version
                 switch (menyChoice) 
                 {
                     case 1:
-                        //SchoolManager.ShowAllStudents();
+                        SchoolManager.ShowAllStudents(); // Fin ito
                         break;
 
                     case 2:
-                        //SchoolManager.GetStudentInfo();
+                        Console.Write("Ange studentens ID: ");  // Fin ito
+                        if (int.TryParse(Console.ReadLine(), out int studentId))
+                        {
+                            SchoolManager.GetStudentInfo(studentId);
+                            Console.ReadKey();
+                        }
+                        else
+                        {
+                            Console.WriteLine("Felaktigt ID, försök igen.");
+                            Console.ReadKey();
+                        }
                         break;
 
                     case 3:
@@ -50,14 +57,14 @@ namespace School_Dé_León_Beta.Version
                         break;
 
                     case 4:
-                        SchoolManager.ShowAllEmployes();
+                        SchoolManager.ShowAllEmployes();    // Fin ito
                         break;
 
                     case 5:
-                        Console.WriteLine("Vill du se lönerna per avdelning?" +
-                            "\nEller medellönen per avdelning?" +
-                            "");
-                        SchoolManager.ShowDepartmentSalaries();
+                        //Console.WriteLine("Vill du se lönerna per avdelning?" +
+                        //    "\nEller medellönen per avdelning?" +
+                        //    "");
+                        //SchoolManager.ShowDepartmentSalaries();
                         SchoolManager.ShowAverageSalaryPerDepartment();
                         break;
 
@@ -82,6 +89,7 @@ namespace School_Dé_León_Beta.Version
                         break;
 
                 }
+                Console.Clear();
             }
 
         }
