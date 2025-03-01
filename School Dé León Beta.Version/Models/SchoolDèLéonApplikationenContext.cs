@@ -103,6 +103,7 @@ public partial class SchoolDèLéonApplikationenContext : DbContext
             entity.ToTable("Grade");
 
             entity.Property(e => e.GradeId).HasColumnName("GradeID");
+            entity.Property(e => e.GradeValue).HasColumnName("GradeValue");
             entity.Property(e => e.DateTime).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.EmployeId).HasColumnName("EmployeID");
             entity.Property(e => e.StudentId).HasColumnName("StudentID");

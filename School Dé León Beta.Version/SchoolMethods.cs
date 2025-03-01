@@ -13,9 +13,9 @@ namespace School_Dé_León_Beta.Version
 
         public void ShowAllStudents()
         {
-            using (var context = new SchoolDèLéonApplikationenContext())
+            using (var context = new SchoolDèLéonApplikationenContext())    // Creating a context to interact with the database
             {
-                var students = (from s in context.Students
+                var students = (from s in context.Students  // Query question that asks to fetch all students by/which class they are in
                                 join c in context.Classes on s.ClassId equals c.ClassId
                                 select new
                                 {
@@ -37,12 +37,12 @@ namespace School_Dé_León_Beta.Version
         public void GetStudentInfo(int studentId)
         {
             try
-            {
+            {   // Opennig a connection whit database
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
                     using (SqlCommand cmd = new SqlCommand("GetStudentInfo", conn))
-                    {
+                    {   // Here we use a stored procedure to get the student info by studentId, check database for the CD
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@StudentId", studentId);
 
@@ -55,7 +55,7 @@ namespace School_Dé_León_Beta.Version
                                 Console.ReadKey();
                             }
                             else
-                            {
+                            {   // If no student match whit ID
                                 Console.WriteLine("Ingen elev hittades med det angivna ID:t.");
                                 Console.ReadKey();
                             }
@@ -63,42 +63,97 @@ namespace School_Dé_León_Beta.Version
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex)    // Error message
             {
                 Console.WriteLine($"Ett fel uppstod: {ex.Message}");
             }
         }
         public void AddNewEmploye()
-        {
-            Console.Write("Ange namn: ");
-            string name = Console.ReadLine();
-            Console.Write("Ange befattning: ");
-            string position = Console.ReadLine();
-            Console.Write("Ange startdatum (YYYY-MM-DD): ");
-            string startDate = Console.ReadLine();
+        {   // Ask the user to about new employee
+            Console.Write("Ange förnamn: ");
+            string firstName = Console.ReadLine();
+
+            Console.Write("Ange efternamn: ");
+            string lastName = Console.ReadLine();
+
+            Console.WriteLine("\nVälj roll:");  // A dictionary with the availabe rolls/positions at this marveoulos school
+            Dictionary<int, string> roles = new Dictionary<int, string>
+            {
+            {1, "Lärare"},
+            {2, "Rektor"},
+            {3, "Administratör"},
+            {4, "Skolsköterska"},
+            {5, "Vaktmästare"},
+            {6, "Bibliotikarie"},
+            {7, "Kurator"}
+            };
+
+            foreach (var role in roles) 
+            { 
+                Console.WriteLine($"{role.Key}. {role.Value}");
+            }
+
+            Console.Write("Ange roll (nummer): ");
+            int rollId = Convert.ToInt32(Console.ReadLine());
+
+            Dictionary<int, string> departments = new Dictionary<int, string>();
 
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
-                string query = "INSERT INTO Employe (Name, Position, StartDate) VALUES (@name, @position, @startDate)";
+                string query = "SELECT DepartmentID, DepartmentName FROM Department";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
+                using (SqlDataReader reader = cmd.ExecuteReader())
                 {
-                    cmd.Parameters.AddWithValue("@name", name);
-                    cmd.Parameters.AddWithValue("@position", position);
-                    cmd.Parameters.AddWithValue("@startDate", startDate);
-                    cmd.ExecuteNonQuery();
+                    while (reader.Read())   // adds alla departments in the dictionary
+                    {
+                        departments.Add(reader.GetInt32(0), reader.GetString(1));
+                    }
+                }
+
+                Console.WriteLine("\nVälj avdelning:");
+                foreach (var dept in departments) 
+                { 
+                    Console.WriteLine($"{dept.Key}. {dept.Value}");
+                }
+
+                Console.Write("Ange avdelning (nummer): ");
+                int departmentId = Convert.ToInt32(Console.ReadLine());
+
+                Console.Write("Ange startdatum (YYYY-MM-DD): ");
+                string hireDate = Console.ReadLine();
+                // Puts all the info in the database and adds our new employee
+                string insertQuery = "INSERT INTO Employe (EmployeFName, EmployeLName, RollID, DepartmentID, HireDate) " +
+                                     "VALUES (@firstName, @lastName, @rollId, @departmentId, @hireDate)";
+
+                using (SqlCommand insertCmd = new SqlCommand(insertQuery, conn))
+                {
+                    insertCmd.Parameters.AddWithValue("@firstName", firstName);
+                    insertCmd.Parameters.AddWithValue("@lastName", lastName);
+                    insertCmd.Parameters.AddWithValue("@rollId", rollId);
+                    insertCmd.Parameters.AddWithValue("@departmentId", departmentId);
+                    insertCmd.Parameters.AddWithValue("@hireDate", hireDate);
+                    insertCmd.ExecuteNonQuery();
                 }
             }
-            Console.WriteLine("Personal tillagd!");
-        }
 
+            Console.WriteLine("\nPersonal tillagd!");
+            Console.ReadKey();
+        }
         public void ShowAllEmployes()
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                conn.Open();
-                string query = "SELECT EmployeFName, EmployeLName, RollId, DepartmentID, HireDate FROM Employe";
+                conn.Open();    // Asking the the database to fetch all employes that is working here
+                string query = @"SELECT e.EmployeFName, e.EmployeLName, r.RoleName AS Befattning, d.DepartmentName AS Avdelning, 
+                e.HireDate
+                FROM 
+                Employe e
+                JOIN 
+                Roll r ON e.RollID = r.RollID
+                LEFT JOIN 
+                Department d ON e.DepartmentID = d.DepartmentID;";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
@@ -106,54 +161,62 @@ namespace School_Dé_León_Beta.Version
                     Console.WriteLine("\n--- Personal Översikt ---\n");
                     while (reader.Read())
                     {
-                        Console.WriteLine($"Namn: {reader["EmployeFName"]} {reader["EmployeLName"]}  " +
-                            $"| Befattning: {reader["RollId"]} {reader["DepartmentID"]} " +
-                            $"| År på skolan: {reader["HireDate"]}");
+                        Console.WriteLine(
+                            $"Namn: {reader["EmployeFName"]} {reader["EmployeLName"]}  " +
+                            $"| Befattning: {reader["Befattning"]} " +
+                            $"| Avdelning: {reader["Avdelning"]} " +
+                            $"| År på skolan: {((DateTime)reader["HireDate"]).Year}"
+                        );
                     }
                     Console.ReadKey();
                 }
             }
         }
 
-        //public void ShowAllCourses()
-        //{
-        //    using (var context = new SchoolDèLéonApplikationenContext())
-        //    {
-        //        var courses = context.Subject.ToList();
-        //        Console.WriteLine("\n--- Lista över alla kurser ---\n");
+        public void ShowAllCourses()
+        {
+            using (var context = new SchoolDèLéonApplikationenContext())
+            {
+                var courses = context.Subjects.ToList();    
+                Console.WriteLine("\n--- Lista över alla kurser ---\n");
 
-        //        foreach (var course in courses)
-        //        {
-        //            Console.WriteLine($"ID: {course.Id} | Kurs: {course.Name}");
-        //        }
-        //    }
-        //}
+                foreach (var course in courses)
+                {
+                   
+                    Console.WriteLine($"ID: {course.SubjectId} | Kurs: {course.SubjectName} | Tillgänglig: {course.IsActive} |");
+                }
+            }
+            Console.ReadKey();
+        }
 
-        public void SetGradeForStudent(int studentId, int courseId, string grade, int teacherId)
+        public void SetGradeForStudent(int givenstudentId, int givenSubjectId, int givenGrade, int teacherId)
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
                 conn.Open();
                 SqlTransaction transaction = conn.BeginTransaction();
-
                 try
-                {
-                    string query = "INSERT INTO Grades (StudentId, CourseId, Grade, TeacherId, DateSet) VALUES (@studentId, @courseId, @grade, @teacherId, GETDATE())";
-                    using (SqlCommand cmd = new SqlCommand(query, conn, transaction))
+                {   //trying to update a grade from a student with the info from user
+                    string updateQuery = "UPDATE Grade SET GradeValue = @grade, EmployeID = " +
+                        "@EmployeId, DateTime = GETDATE()" +
+                        " WHERE StudentID = @studentId AND SubjectID = @subjectId";
+                    using (SqlCommand cmd = new SqlCommand(updateQuery, conn, transaction))
                     {
-                        cmd.Parameters.AddWithValue("@studentId", studentId);
-                        cmd.Parameters.AddWithValue("@courseId", courseId);
-                        cmd.Parameters.AddWithValue("@grade", grade);
-                        cmd.Parameters.AddWithValue("@teacherId", teacherId);
+                        cmd.Parameters.AddWithValue("@studentId", givenstudentId);
+                        cmd.Parameters.AddWithValue("@SubjectId", givenSubjectId);
+                        cmd.Parameters.AddWithValue("@grade", givenGrade);
+                        cmd.Parameters.AddWithValue("@EmployeId", teacherId);
                         cmd.ExecuteNonQuery();
                     }
                     transaction.Commit();
                     Console.WriteLine("Betyg satt!");
+                    Console.ReadKey();
                 }
-                catch
+                catch (Exception ex)
                 {
                     transaction.Rollback();
-                    Console.WriteLine("Något gick fel, betyg sparades inte.");
+                    Console.WriteLine($"Något gick fel, betyg sparades inte. Fel: {ex.Message}");
+                    Console.ReadKey();
                 }
             }
         }
@@ -161,13 +224,16 @@ namespace School_Dé_León_Beta.Version
         public void ShowStudentGrades(int studentId)
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-                string query = @"SELECT c.Name AS Course, g.Grade, t.Name AS Teacher, g.DateSet 
-                         FROM Grades g
-                         JOIN Courses c ON g.CourseId = c.Id
-                         JOIN Teachers t ON g.TeacherId = t.Id
-                         WHERE g.StudentId = @studentId";
+            {   
+                conn.Open();    // Asks to get all the grades for 1 student
+                string query = @"SELECT s.SubjectName AS Course, 
+                        g.GradeValue AS Grade, 
+                        CONCAT(e.EmployeFName, ' ', e.EmployeLName) AS Teacher, 
+                        g.DateTime AS DateSet 
+                 FROM Grade g
+                 JOIN Subject s ON g.SubjectId = s.SubjectID
+                 JOIN Employe e ON g.EmployeId = e.EmployeID
+                 WHERE g.StudentId = @studentId";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 {
@@ -183,56 +249,69 @@ namespace School_Dé_León_Beta.Version
                 }
             }
         }
-        //public void ShowTeachersPerDepartment()
-        //{
-        //    using (var context = new SchoolDèLéonApplikationenContext())
-        //    {
-        //        var departments = context.Teachers
-        //            .GroupBy(t => t.Department)
-        //            .Select(group => new { Department = group.Key, Count = group.Count() })
-        //            .ToList();
-
-        //        Console.WriteLine("\n--- Lärare per avdelning ---\n");
-        //        foreach (var dep in departments)
-        //        {
-        //            Console.WriteLine($"Avdelning: {dep.Department} | Antal lärare: {dep.Count}");
-        //        }
-        //    }
-        //}
         public void ShowDepartmentSalaries()
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                conn.Open();
-                string query = "SELECT Department, SUM(Salary) AS TotalSalary FROM Employees GROUP BY Department";
+                conn.Open();    // Asks to get all the money that is paid out to all departments every month in based on salary
+                string query = @"SELECT d.DepartmentName, COALESCE(SUM(r.Salary), 0) AS TotalSalary 
+                    FROM Department d
+                    LEFT JOIN Employe e ON e.DepartmentID = d.DepartmentID
+                    LEFT JOIN Roll r ON e.RollID = r.RollID
+                    GROUP BY d.DepartmentName";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
                     Console.WriteLine("\n--- Löner per avdelning ---\n");
+                    bool hasRows = false;
+
                     while (reader.Read())
                     {
-                        Console.WriteLine($"Avdelning: {reader["Department"]} | Total lön: {reader["TotalSalary"]} SEK");
+                        hasRows = true;
+                        Console.WriteLine($"Avdelning: {reader["DepartmentName"]} | Total lön: {reader["TotalSalary"]} SEK");
                     }
+
+                    if (!hasRows)   // If a department does not have personal
+                    {
+                        Console.WriteLine("Ingen personal hittades i databasen.");
+                    }
+
+                    Console.ReadKey();
                 }
             }
         }
         public void ShowAverageSalaryPerDepartment()
         {
-            using (SqlConnection conn = new SqlConnection(connectionString))
+            try
             {
-                conn.Open();
-                string query = "SELECT Department, AVG(Salary) AS AvgSalary FROM Employe GROUP BY Department";
-
-                using (SqlCommand cmd = new SqlCommand(query, conn))
-                using (SqlDataReader reader = cmd.ExecuteReader())
+                using (SqlConnection conn = new SqlConnection(connectionString))
                 {
-                    Console.WriteLine("\n--- Medellön per avdelning ---\n");
-                    while (reader.Read())
+                    conn.Open();    // asks to the avarage for each department... (salary for the moment is based on roll not on the person... so some departments are not that fun)
+                    string query = @"SELECT D.DepartmentName, AVG(R.Salary) AS AvgSalary FROM Employe E
+                    JOIN 
+                    Roll R ON E.RollID = R.RollID
+                    JOIN 
+                    Department D ON E.DepartmentID = D.DepartmentID
+                    GROUP BY 
+                    D.DepartmentName;";
+
+                    using (SqlCommand cmd = new SqlCommand(query, conn))
+                    using (SqlDataReader reader = cmd.ExecuteReader())
                     {
-                        Console.WriteLine($"Avdelning: {reader["Department"]} | Medellön: {reader["AvgSalary"]} SEK");
+                        Console.WriteLine("\n--- Medellön per avdelning ---\n");
+                        while (reader.Read())
+                        {
+                            Console.WriteLine($"Avdelning: {reader["DepartmentName"]} | Medellön: {reader["AvgSalary"]} SEK");
+                        }
+                        Console.ReadKey();
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Ett fel uppstod: {ex.Message}");
+                Console.ReadKey();
             }
         }
     }
