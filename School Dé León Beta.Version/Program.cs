@@ -8,7 +8,7 @@ namespace School_Dé_León_Beta.Version
         static void Main(string[] args)
         {
             Console.WriteLine("Välkommen till School Dè Léon Applikationen!" +
-                "\nBeta Version 2.5");
+                "\nBeta Version 3.0");
             Thread.Sleep(5000);
             Console.Clear();
             var SchoolManager = new SchoolMethods();
@@ -24,7 +24,7 @@ namespace School_Dé_León_Beta.Version
                 Console.WriteLine("1. Visa alla elever");
                 Console.WriteLine("2. Hämta elev info");
                 Console.WriteLine("3. Ny perosnal");
-                Console.WriteLine("4. Visa all personal");
+                Console.WriteLine("4. Visa antal personal på avdelning");
                 Console.WriteLine("5. Visa Löner (Tidigare `$$$`)");
                 Console.WriteLine("6. Kurser/Ämnen");
                 Console.WriteLine("7. Sätt betyg på elev");
@@ -131,7 +131,6 @@ namespace School_Dé_León_Beta.Version
                         case 0:
                             Console.WriteLine("STänger ner programmet" +
                                 "\nLämmna en review Google Review");
-                            Console.ReadKey();
                             run = false;
                             break;
 

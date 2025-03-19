@@ -141,43 +141,36 @@ namespace School_Dé_León_Beta.Version
             Console.WriteLine("\nPersonal tillagd!");
             Console.ReadKey();
         }
-        public void ShowAllEmployes()
+        public void ShowAllEmployes()   // Vissa antal per avdelning
         {
             using (SqlConnection conn = new SqlConnection(connectionString))
             {
-                conn.Open();    // Asking the the database to fetch all employes that is working here
-                string query = @"SELECT e.EmployeFName, e.EmployeLName, r.RoleName AS Befattning, d.DepartmentName AS Avdelning, 
-                e.HireDate
-                FROM 
-                Employe e
-                JOIN 
-                Roll r ON e.RollID = r.RollID
-                LEFT JOIN 
-                Department d ON e.DepartmentID = d.DepartmentID;";
+                conn.Open();
+                string query = @" SELECT d.DepartmentName AS Avdelning, COUNT(e.EmployeID) AS AntalAnställda
+                FROM Department d
+                LEFT JOIN Employe e ON e.DepartmentID = d.DepartmentID
+                GROUP BY 
+                d.DepartmentName;";
 
                 using (SqlCommand cmd = new SqlCommand(query, conn))
                 using (SqlDataReader reader = cmd.ExecuteReader())
                 {
-                    Console.WriteLine("\n--- Personal Översikt ---\n");
+                    Console.WriteLine("\n--- Antal anställda per avdelning ---\n");
+                        
                     while (reader.Read())
                     {
-                        Console.WriteLine(
-                            $"Namn: {reader["EmployeFName"]} {reader["EmployeLName"]}  " +
-                            $"| Befattning: {reader["Befattning"]} " +
-                            $"| Avdelning: {reader["Avdelning"]} " +
-                            $"| År på skolan: {((DateTime)reader["HireDate"]).Year}"
-                        );
+                        Console.WriteLine($"Avdelning: {reader["Avdelning"]} | Antal anställda: {reader["AntalAnställda"]}");
                     }
-                    Console.ReadKey();
                 }
+                Console.ReadKey();
             }
         }
 
-        public void ShowAllCourses()
+        public void ShowAllCourses()    // Added (Where) to show all avaiable courses
         {
             using (var context = new SchoolDèLéonApplikationenContext())
             {
-                var courses = context.Subjects.ToList();    
+                var courses = context.Subjects.Where(s => s.IsActive).ToList();    
                 Console.WriteLine("\n--- Lista över alla kurser ---\n");
 
                 foreach (var course in courses)
